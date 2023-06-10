@@ -1,11 +1,11 @@
 If:
-    PathMatch: (asr|asr_asl|hello_world)/.+
+    PathMatch: .*(asr|asr_asl|hello_world)/.+
 CompileFlags:
     Add: [-xc]
     Remove: [-xc++, -std=gnu++20]
 ---
 If:
-    PathMatch: (asr_utils)/.+
+    PathMatch: .*(asr_utils|bl3)/.+
 CompileFlags:
     Add: [-xc++]
     Remove: [-xc]
