@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "dynamic_pointers.h"
 #include "offsets.h"
+#include "settings.h"
 #include "sigscanning/gnames.h"
 #include "sigscanning/gworld.h"
 #include "sigscanning/loading.h"
@@ -8,7 +9,9 @@
 
 namespace {
 
-asr_utils::Variable<int32_t> char_time{"Char Time"};
+asr_utils::Variable<int32_t> char_time{"Character Time"};
+asr_utils::Variable<std::string> in_game_world{DEBUG_VARIABLES ? "Last In Game World" : "None"};
+asr_utils::Variable<uint32_t> save_quits{"SQs", 0};
 
 }  // namespace
 
@@ -50,6 +53,10 @@ bool update(ProcessId /*game*/) {
         runtime_print_message("World changed {} -> {}", current_world, new_world);
 
         current_world = new_world;
+
+        if (current_world == "MenuMap_P") {
+            save_quits = save_quits.value() + 1;
+        }
     }
 
     if (!find_offsets()) {
@@ -75,18 +82,44 @@ bool update(ProcessId /*game*/) {
     return true;
 }
 
-bool is_loading(ProcessId /*game*/) {
-    return loading.current() || current_world.value() == "MenuMap_P";
-}
-
 bool start(ProcessId /* game */) {
     if (!found_all_offsets()) {
         return false;
     }
 
-    if (starting_echo.changed() && starting_echo.current() == 1
-        && current_world.value() == "Recruitment_P") {
+    if (settings.start_echo && starting_echo.changed() && starting_echo.current() == 1
+        && current_world == "Recruitment_P") {
         runtime_print_message("Starting due to collecting echo.");
+        return true;
+    }
+
+    return false;
+}
+
+void on_start(void) {
+    in_game_world = "None";
+    save_quits = 0;
+}
+
+bool is_loading(ProcessId /*game*/) {
+    return settings.use_char_time || loading.current() || current_world == "MenuMap_P";
+}
+
+Duration* game_time(ProcessId /*game*/) {
+    if (!settings.use_char_time) {
+        return nullptr;
+    }
+
+    static Duration duration{0, 0};
+    duration.secs = char_time;
+    return &duration;
+}
+
+bool split(ProcessId /*game*/) {
+    if (settings.split_levels && current_world != "None" && in_game_world != "None"
+        && current_world != "MenuMap_P" && current_world.value() != in_game_world.value()) {
+        in_game_world = current_world.value();
+        runtime_print_message("Splitting due to level transition");
         return true;
     }
 

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "dynamic_pointers.h"
 #include "offsets.h"
+#include "settings.h"
 #include "sigscanning/gnames.h"
 #include "sigscanning/gworld.h"
 #include "sigscanning/localplayer.h"
@@ -10,16 +11,6 @@ namespace {
 
 const constexpr auto STARTING_ECHO_MISSION = "Mission_Ep01_ChildrenOfTheVault_C";
 const constexpr auto STARTING_ECHO_OBJECTIVE_IDX = 4;
-
-const std::unordered_map<std::string, bool> STARTING_MISSIONS{
-    {"Mission_DLC1_Ep01_MeetTimothy_C",
-     user_settings_add_bool("start_jackpot", "Starting Jackpot DLC", true)},
-    {"EP01_DLC2_C", user_settings_add_bool("start_wedding", "Starting Wedding DLC", true)},
-    {"Mission_Ep01_WestlandWelcome_C",
-     user_settings_add_bool("start_bounty", "Starting Bounty DLC", true)},
-    {"ALI_EP01_C", user_settings_add_bool("start_krieg", "Starting Krieg DLC", true)},
-    {"Mission_GearUp_Intro_C",
-     user_settings_add_bool("start_arms_race", "Starting Arms Race DLC", true)}};
 
 /**
  * @brief Gets the offset into the mission playthroughs array to use for the current playthrough.
@@ -120,7 +111,7 @@ void on_missions_changed(void) {
         }
 
         if (!STARTING_MISSIONS.contains(mission_name) || !STARTING_MISSIONS.at(mission_name)
-            || current_world.value() != "Sanctuary3_P") {
+            || current_world != "Sanctuary3_P") {
             continue;
         }
 
