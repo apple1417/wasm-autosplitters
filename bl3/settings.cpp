@@ -49,10 +49,3 @@ Settings init_settings(void) {
 }  // namespace
 
 Settings settings = init_settings();
-
-const std::unordered_map<std::string, bool> STARTING_MISSIONS{
-    {"Mission_DLC1_Ep01_MeetTimothy_C", settings.start_jackpot},
-    {"EP01_DLC2_C", settings.start_wedding},
-    {"Mission_Ep01_WestlandWelcome_C", settings.start_bounty},
-    {"ALI_EP01_C", settings.start_krieg},
-    {"Mission_GearUp_Intro_C", settings.start_arms_race}};

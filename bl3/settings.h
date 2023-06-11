@@ -26,9 +26,4 @@ struct Settings {
  */
 extern Settings settings;
 
-/**
- * @brief A map of mission class names which we start on pickup, to their setting value.
- */
-extern const std::unordered_map<std::string, bool> STARTING_MISSIONS;
-
 #endif /* SETTINGS_H */

@@ -10,8 +10,18 @@
 namespace {
 
 asr_utils::Variable<int32_t> char_time{"Character Time"};
-asr_utils::Variable<std::string> in_game_world{DEBUG_VARIABLES ? "Last In Game World" : "None"};
+
 asr_utils::Variable<uint32_t> save_quits{"SQs", 0};
+asr_utils::Variable<std::string> in_game_world{DEBUG_VARIABLES ? "Last In Game World" : "", "None"};
+
+struct ObjectiveSetSplitData {
+    asr_utils::MemWatcher<int32_t>& watcher;
+    asr_utils::Variable<std::string> var;
+    const bool Settings::*setting;
+    const std::string final_objective_set;
+};
+// NOLINTNEXTLINE(readability-identifier-naming)
+std::vector<ObjectiveSetSplitData> SPLIT_OBJECTIVE_SET_DATA;
 
 }  // namespace
 
@@ -22,6 +32,42 @@ const MatchableExecutableName MATCHABLE_EXECUTABLES[] = {
     MATCH_EXECUTABLE_TRUNC15("Borderlands3.exe"),
     END_MATCHABLE_EXECUTABLES(),
 };
+
+void startup(void) {
+    // Need to initialize this here to ensure the references to the mem watchers are valid
+    SPLIT_OBJECTIVE_SET_DATA = std::vector<ObjectiveSetSplitData>{
+        {
+            tyreen_cutscene_objective_set,
+            {DEBUG_VARIABLES ? "Tyreen Objective Set" : "", "None"},
+            &Settings::split_tyreen,
+            "Set_TyreenDeadCine_ObjectiveSet",
+        },
+        {
+            jackpot_cutscene_objective_set,
+            {DEBUG_VARIABLES ? "Jackpot Objective Set" : "", "None"},
+            &Settings::split_jackpot,
+            "Set_FinalCinematic_ObjectiveSet",
+        },
+        {
+            wedding_cutscene_objective_set,
+            {DEBUG_VARIABLES ? "Wedding Objective Set" : "", "None"},
+            &Settings::split_wedding,
+            "Set_FinalCredits_ObjectiveSet",
+        },
+        {
+            bounty_cutscene_objective_set,
+            {DEBUG_VARIABLES ? "Bounty Objective Set" : "", "None"},
+            &Settings::split_bounty,
+            "SET_EndCredits_ObjectiveSet",
+        },
+        {
+            krieg_cutscene_objective_set,
+            {DEBUG_VARIABLES ? "Krieg Objective Set" : "", "None"},
+            &Settings::split_krieg,
+            "SET_OutroCIN_ObjectiveSet",
+        },
+    };
+}
 
 bool on_launch(ProcessId game, const MatchableExecutableName* /*name*/) {
     game_info = {game, "Borderlands3.exe"};
@@ -64,11 +110,17 @@ bool update(ProcessId /*game*/) {
     }
 
     // These pointers depend on the dynamic offsets, no sense updating them earlier
-    playthrough.update(game_info);
-    time_played.update(game_info);
-    time_played_save_game.update(game_info);
-    mission_count.update(game_info);
-    starting_echo.update(game_info);
+    for (auto watcher :
+         {&playthrough, &time_played, &time_played_save_game, &mission_count, &starting_echo}) {
+        watcher->update(game_info);
+    }
+
+    for (auto& [watcher, var, _, __] : SPLIT_OBJECTIVE_SET_DATA) {
+        watcher.update(game_info);
+        if (watcher.changed()) {
+            var = read_from_gnames(watcher.current());
+        }
+    }
 
     char_time = time_played.current() + time_played_save_game.current();
 
@@ -121,6 +173,13 @@ bool split(ProcessId /*game*/) {
         in_game_world = current_world.value();
         runtime_print_message("Splitting due to level transition");
         return true;
+    }
+
+    for (auto& [watcher, var, setting, expected] : SPLIT_OBJECTIVE_SET_DATA) {
+        if (settings.*setting && watcher.changed() && var == expected) {
+            runtime_print_message("Splitting due to hitting objective set {}", expected);
+            return true;
+        }
     }
 
     return false;

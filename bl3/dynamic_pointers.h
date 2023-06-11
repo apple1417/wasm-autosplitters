@@ -26,7 +26,16 @@ extern asr_utils::MemWatcher<decltype(TArray<void>::count)> mission_count;
 extern asr_utils::MemWatcher<int32_t> starting_echo;
 
 /**
- * @brief Performs inital initalization of the dynamic pointers on first attaching to a new game.
+ * @brief Watcher for the objective set name for each of the relevant missions.
+ */
+extern asr_utils::MemWatcher<decltype(FName::index)> tyreen_cutscene_objective_set;
+extern asr_utils::MemWatcher<decltype(FName::index)> jackpot_cutscene_objective_set;
+extern asr_utils::MemWatcher<decltype(FName::index)> wedding_cutscene_objective_set;
+extern asr_utils::MemWatcher<decltype(FName::index)> bounty_cutscene_objective_set;
+extern asr_utils::MemWatcher<decltype(FName::index)> krieg_cutscene_objective_set;
+
+/**
+ * @brief Performs initial initialization of the dynamic pointers on first attaching to a new game.
  */
 void init_dynamic_pointers(void);
 
