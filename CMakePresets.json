@@ -9,7 +9,7 @@
         "cacheVariables": {
           "CMAKE_SYSROOT": "${sourceDir}/wasi-sysroot"
         },
-        "toolchainFile": "wasm32-wasi-clang-toolchain.cmake"
+        "toolchainFile": "asr-c/wasm32-wasi-clang-toolchain.cmake"
       },
       {
         "name": "debug",

@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "sigscanning/localplayer.h"
-#include "utils/variable.h"
 
 namespace {
 
