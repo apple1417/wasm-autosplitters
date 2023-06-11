@@ -1,9 +1,10 @@
 #include "pch.h"
-#include "dynamic_pointers.h"
 #include "offsets.h"
+#include "dynamic_pointers.h"
 #include "sigscanning/gnames.h"
 #include "sigscanning/localplayer.h"
 #include "unreal_types.h"
+
 
 DynamicOffsets offsets{};
 
@@ -102,15 +103,15 @@ bool find_offsets(void) {
             }
 
             // Search for `localplayer.PlayerController` + extract class
-            if (!for_each_prop<UProperty>(
-                    read_mem<UClass>(game_info, localplayer_cls), [](auto prop) {
-                        auto name = read_from_gnames(prop.name.index);
-                        if (name == "PlayerController") {
-                            offsets.PlayerController = prop.offset_internal;
-                            return true;
-                        }
-                        return false;
-                    })) {
+            if (!for_each_prop<UProperty>(read_mem<UClass>(game_info, localplayer_cls),
+                                          [](auto prop) {
+                                              auto name = read_from_gnames(prop.name.index);
+                                              if (name == "PlayerController") {
+                                                  offsets.PlayerController = prop.offset_internal;
+                                                  return true;
+                                              }
+                                              return false;
+                                          })) {
                 return false;
             }
 
@@ -134,7 +135,8 @@ bool find_offsets(void) {
             size_t n_found_pc = 0;
             UClass mission_cls{};
             if (!for_each_prop<UObjectProperty>(
-                    read_mem<UClass>(game_info, pc_cls), [&n_found_pc, &mission_cls](const UObjectProperty& prop) {
+                    read_mem<UClass>(game_info, pc_cls),
+                    [&n_found_pc, &mission_cls](const UObjectProperty& prop) {
                         auto name = read_from_gnames(prop.name.index);
                         if (name == "TimePlayedSeconds") {
                             offsets.TimePlayedSeconds = prop.offset_internal;
@@ -208,6 +210,7 @@ bool find_offsets(void) {
             //   `entry.ActiveObjectiveSet`
             //   `entry.ObjectivesProgress`
             //   `sizeof(entry.ObjectivesProgress[0])`
+            //   `entry.Status`
             size_t n_found_entry = 0;
             if (!for_each_prop<UArrayProperty>(
                     missionlist_entry, [&n_found_entry](const UArrayProperty& prop) {
@@ -222,10 +225,14 @@ bool find_offsets(void) {
                             offsets.ObjectivesProgress = prop.offset_internal;
                             n_found_entry++;
 
-                             offsets.ObjectivesProgress_ElementSize = prop.inner.dereference(game_info).element_size;
+                            offsets.ObjectivesProgress_ElementSize =
+                                prop.inner.dereference(game_info).element_size;
+                        } else if (name == "Status") {
+                            offsets.Status = prop.offset_internal;
+                            n_found_entry++;
                         }
 
-                        return n_found_entry >= 3;
+                        return n_found_entry >= 4;
                     })) {
                 return false;
             }

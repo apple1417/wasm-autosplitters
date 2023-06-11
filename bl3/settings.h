@@ -13,12 +13,13 @@ struct Settings {
     bool split_levels;     // Level transitions
     // Not supported by runtime yet
     // bool split_levels_dont_end;  // Unless doing so would end the run
-    bool split_tyreen;   // Main Campaign ending cutscene
-    bool split_jackpot;  // Jackpot DLC ending cutscene
-    bool split_wedding;  // Wedding DLC ending cutscene
-    bool split_bounty;   // Bounty DLC ending cutscene
-    bool split_krieg;    // Krieg DLC ending cutscene
-    bool use_char_time;  // Track character time, instead of loadless.
+    bool split_any_mission;  // Mission completions
+    bool split_tyreen;       // Main Campaign ending cutscene
+    bool split_jackpot;      // Jackpot DLC ending cutscene
+    bool split_wedding;      // Wedding DLC ending cutscene
+    bool split_bounty;       // Bounty DLC ending cutscene
+    bool split_krieg;        // Krieg DLC ending cutscene
+    bool use_char_time;      // Track character time, instead of loadless.
 };
 
 /**

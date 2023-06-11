@@ -1,6 +1,4 @@
 #include "pch.h"
-#include <chrono>
-#include "asr.h"
 #include "dynamic_pointers.h"
 #include "offsets.h"
 #include "settings.h"
@@ -8,6 +6,7 @@
 #include "sigscanning/gworld.h"
 #include "sigscanning/loading.h"
 #include "sigscanning/localplayer.h"
+#include "unreal_types.h"
 
 using namespace std::chrono_literals;
 
@@ -133,6 +132,23 @@ bool update(ProcessId /*game*/) {
         }
     }
 
+    // Use an iterator so we can erase during the loop
+    for (auto it = incomplete_missions.begin(); it != incomplete_missions.end();) {
+        it->update(game_info);
+
+        if (it->changed()
+            && static_cast<EMissionStatus>(it->current()) == EMissionStatus::MS_Complete) {
+            // Handling this here also lets us split multiple times per tick... if we ever need that
+            runtime_print_message("Splitting due to mission completion");
+            timer_split();
+
+            it = incomplete_missions.erase(it);
+            incomplete_mission_count = incomplete_missions.size();
+        } else {
+            it++;
+        }
+    }
+
     char_time = time_played.current() + time_played_save_game.current();
 
     if (playthrough.changed()) {
@@ -170,7 +186,7 @@ bool is_loading(ProcessId /*game*/) {
 }
 
 Duration* game_time(ProcessId /*game*/) {
-    if (!settings.use_char_time) {
+    if (!settings.use_char_time || char_time == 0) {
         return nullptr;
     }
 

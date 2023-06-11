@@ -26,10 +26,14 @@ asr_utils::MemWatcher<decltype(FName::index)> wedding_cutscene_objective_set{};
 asr_utils::MemWatcher<decltype(FName::index)> bounty_cutscene_objective_set{};
 asr_utils::MemWatcher<decltype(FName::index)> krieg_cutscene_objective_set{};
 
+std::vector<asr_utils::MemWatcher<uint8_t>> incomplete_missions;
+asr_utils::Variable<size_t> incomplete_mission_count{"Incomplete Missions"};
+
 namespace {
 
 // Name, Objective Index, Suppress Changed, WATCHER
-const constinit std::array<std::tuple<const char*, size_t, bool, asr_utils::MemWatcher<int32_t>&>, 1>
+const constinit std::array<std::tuple<const char*, size_t, bool, asr_utils::MemWatcher<int32_t>&>,
+                           1>
     OBJECTIVE_WATCHERS{{
         {"Mission_Ep01_ChildrenOfTheVault_C", 4, true, starting_echo},
     }};
@@ -45,13 +49,14 @@ const constinit std::array<std::pair<const char*, asr_utils::MemWatcher<int32_t>
     }};
 
 // Name, Setting
-const constinit std::array<std::pair<const char*, const bool Settings::*>, 5> INSTANT_STARTING_MISSIONS{{
-    {"Mission_DLC1_Ep01_MeetTimothy_C", &Settings::start_jackpot},
-    {"EP01_DLC2_C", &Settings::start_wedding},
-    {"Mission_Ep01_WestlandWelcome_C", &Settings::start_bounty},
-    {"ALI_EP01_C", &Settings::start_krieg},
-    {"Mission_GearUp_Intro_C", &Settings::start_arms_race},
-}};
+const constinit std::array<std::pair<const char*, const bool Settings::*>, 5>
+    INSTANT_STARTING_MISSIONS{{
+        {"Mission_DLC1_Ep01_MeetTimothy_C", &Settings::start_jackpot},
+        {"EP01_DLC2_C", &Settings::start_wedding},
+        {"Mission_Ep01_WestlandWelcome_C", &Settings::start_bounty},
+        {"ALI_EP01_C", &Settings::start_krieg},
+        {"Mission_GearUp_Intro_C", &Settings::start_arms_race},
+    }};
 
 /**
  * @brief Gets the offset into the mission playthroughs array to use for the current playthrough.
@@ -62,6 +67,33 @@ const constinit std::array<std::pair<const char*, const bool Settings::*>, 5> IN
 ptrdiff_t current_playthrough_offset(void) {
     auto playthrough_idx = playthrough.current() == 1 ? 1 : 0;
     return static_cast<ptrdiff_t>(offsets.MissionPlaythroughs_ElementSize * playthrough_idx);
+}
+
+/**
+ * @brief Adds the current mission to the incomplete missions list, if required.
+ *
+ * @param this_mission_status_addr The absolute address of the status byte for this mission.
+ * @param playthrough_mission_list_offset The current mission list's offset in the playthrough data.
+ * @param this_mission_status_offset The status byte's offset in the current mission list.
+ */
+void add_incomplete_missions(Address this_mission_status_addr,
+                             ptrdiff_t playthrough_mission_list_offset,
+                             ptrdiff_t this_mission_status_offset) {
+    auto status = read_mem<EMissionStatus>(game_info, this_mission_status_addr);
+    if (status == EMissionStatus::MS_Complete) {
+        return;
+    }
+
+    incomplete_missions.emplace_back(asr_utils::DeepPointer{base_localplayer,
+                                                            {
+                                                                offsets.PlayerController,
+                                                                offsets.PlayerMissionComponent,
+                                                                offsets.MissionPlaythroughs,
+                                                                playthrough_mission_list_offset,
+                                                                this_mission_status_offset,
+                                                            }});
+    incomplete_missions.back().update(game_info);
+    incomplete_missions.back().suppress_changed();
 }
 
 /**
@@ -226,6 +258,7 @@ void on_missions_changed(void) {
     auto objectives_data_offset =
         offsets.ObjectivesProgress + static_cast<ptrdiff_t>(offsetof(TArray<void>, data));
 
+    incomplete_missions.clear();
     for (size_t i = 0; i < mission_count.current(); i++) {
         auto this_mission_offset = static_cast<ptrdiff_t>(offsets.MissionList_ElementSize * i);
 
@@ -234,6 +267,12 @@ void on_missions_changed(void) {
                                                               + offsets.MissionClass)
                            + offsetof(UObject, name.index)));
 
+        // Always add incomplete missions
+        add_incomplete_missions(mission_data_list + this_mission_offset + offsets.Status,
+                                playthrough_mission_list_offset,
+                                this_mission_offset + offsets.Status);
+
+        // In all other cases, stop after the first match, since we know they won't conflict
         if (match_objective_missions(mission_name, playthrough_mission_list_offset,
                                      this_mission_offset + objectives_data_offset)) {
             continue;
@@ -251,4 +290,6 @@ void on_missions_changed(void) {
             continue;
         }
     }
+
+    incomplete_mission_count = incomplete_missions.size();
 }

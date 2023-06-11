@@ -2,7 +2,17 @@
 #define UNREAL_TYPES_H
 
 #include "pch.h"
-#include "utils/pointer.h"
+
+// TODO: read these dynamically
+//       idk how to do enums yet
+enum class EMissionStatus : uint8_t {
+    MS_NotStarted = 0,
+    MS_Active = 1,
+    MS_Complete = 2,
+    MS_Failed = 3,
+    MS_Unknown = 4,
+    MS_MAX,
+};
 
 template <typename T>
 struct TArray {

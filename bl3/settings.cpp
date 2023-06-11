@@ -25,6 +25,8 @@ Settings init_settings(void) {
     auto split_levels_dont_end = user_settings_add_bool(
         "split_levels_dont_end", "- - Unless doing so would end the run", true);
     */
+    auto split_any_mission =
+        user_settings_add_bool("split_any_mission", "- Mission completions", false);
     auto split_tyreen =
         user_settings_add_bool("split_tyreen", "- Main Campaign ending cutscene", true);
     auto split_jackpot =
@@ -39,10 +41,10 @@ Settings init_settings(void) {
         "use_char_time", "Track character time, instead of loadless.", false);
 
     return {
-        start_echo,    start_jackpot,   start_wedding, start_bounty,
-        start_krieg,   start_arms_race, split_levels,  /*split_levels_dont_end,*/ split_tyreen,
-        split_jackpot, split_wedding,   split_bounty,  split_krieg,
-        use_char_time,
+        start_echo,   start_jackpot,   start_wedding, start_bounty,
+        start_krieg,  start_arms_race, split_levels,  /*split_levels_dont_end,*/ split_any_mission,
+        split_tyreen, split_jackpot,   split_wedding, split_bounty,
+        split_krieg,  use_char_time,
     };
 }
 

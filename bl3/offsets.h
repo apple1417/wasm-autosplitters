@@ -7,21 +7,23 @@ extern struct DynamicOffsets {
     // NOLINTBEGIN(readability-identifier-naming)
 
 #if DEBUG_VARIABLES
-    asr_utils::HexVariable<ptrdiff_t> PlayerController{"PlayerController"};
-    asr_utils::HexVariable<ptrdiff_t> TimePlayedSeconds{"TimePlayedSeconds"};
+    asr_utils::HexVariable<ptrdiff_t> PlayerController{"Offset PlayerController"};
+    asr_utils::HexVariable<ptrdiff_t> TimePlayedSeconds{"Offset TimePlayedSeconds"};
     asr_utils::HexVariable<ptrdiff_t> TimePlayedSecondsLoadedFromSaveGame{
-        "TimePlayedSecondsLoadedFromSaveGame"};
-    asr_utils::HexVariable<ptrdiff_t> PlayerMissionComponent{"PlayerMissionComponent"};
-    asr_utils::HexVariable<ptrdiff_t> CachedPlaythroughIndex{"CachedPlaythroughIndex"};
-    asr_utils::HexVariable<ptrdiff_t> MissionPlaythroughs{"MissionPlaythroughs"};
+        "Offset TimePlayedSecondsLoadedFromSaveGame"};
+    asr_utils::HexVariable<ptrdiff_t> PlayerMissionComponent{"Offset PlayerMissionComponent"};
+    asr_utils::HexVariable<ptrdiff_t> CachedPlaythroughIndex{"Offset CachedPlaythroughIndex"};
+    asr_utils::HexVariable<ptrdiff_t> MissionPlaythroughs{"Offset MissionPlaythroughs"};
     asr_utils::HexVariable<size_t> MissionPlaythroughs_ElementSize{
-        "MissionPlaythroughs_ElementSize"};
-    asr_utils::HexVariable<ptrdiff_t> MissionList{"MissionList"};
-    asr_utils::HexVariable<size_t> MissionList_ElementSize{"MissionList_ElementSize"};
-    asr_utils::HexVariable<ptrdiff_t> MissionClass{"MissionClass"};
-    asr_utils::HexVariable<ptrdiff_t> ActiveObjectiveSet{"ActiveObjectiveSet"};
-    asr_utils::HexVariable<ptrdiff_t> ObjectivesProgress{"ObjectivesProgress"};
-    asr_utils::HexVariable<size_t> ObjectivesProgress_ElementSize{"ObjectivesProgress_ElementSize"};
+        "Offset MissionPlaythroughs_ElementSize"};
+    asr_utils::HexVariable<ptrdiff_t> MissionList{"Offset MissionList"};
+    asr_utils::HexVariable<size_t> MissionList_ElementSize{"Offset MissionList_ElementSize"};
+    asr_utils::HexVariable<ptrdiff_t> MissionClass{"Offset MissionClass"};
+    asr_utils::HexVariable<ptrdiff_t> ActiveObjectiveSet{"Offset ActiveObjectiveSet"};
+    asr_utils::HexVariable<ptrdiff_t> ObjectivesProgress{"Offset ObjectivesProgress"};
+    asr_utils::HexVariable<size_t> ObjectivesProgress_ElementSize{
+        "Offset ObjectivesProgress_ElementSize"};
+    asr_utils::HexVariable<ptrdiff_t> Status{"Offset Status"};
 #else
     ptrdiff_t PlayerController;
     ptrdiff_t TimePlayedSeconds;
@@ -36,6 +38,7 @@ extern struct DynamicOffsets {
     ptrdiff_t ActiveObjectiveSet;
     ptrdiff_t ObjectivesProgress;
     size_t ObjectivesProgress_ElementSize;
+    ptrdiff_t Status;
 #endif
 
     // NOLINTEND(readability-identifier-naming)

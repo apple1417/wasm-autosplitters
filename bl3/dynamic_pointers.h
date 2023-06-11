@@ -35,6 +35,17 @@ extern asr_utils::MemWatcher<decltype(FName::index)> bounty_cutscene_objective_s
 extern asr_utils::MemWatcher<decltype(FName::index)> krieg_cutscene_objective_set;
 
 /**
+ * @brief A list of watchers for missions which are currently incomplete.
+ */
+extern std::vector<asr_utils::MemWatcher<uint8_t>> incomplete_missions;
+
+/**
+ * @brief A variable holding the amount size of the incomplete mission list.
+ * @note Should be updated when removing entries.
+ */
+extern asr_utils::Variable<size_t> incomplete_mission_count;
+
+/**
  * @brief Performs initial initialization of the dynamic pointers on first attaching to a new game.
  */
 void init_dynamic_pointers(void);
