@@ -1,4 +1,6 @@
 #include "pch.h"
+#include <chrono>
+#include "asr.h"
 #include "dynamic_pointers.h"
 #include "offsets.h"
 #include "settings.h"
@@ -6,6 +8,8 @@
 #include "sigscanning/gworld.h"
 #include "sigscanning/loading.h"
 #include "sigscanning/localplayer.h"
+
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -19,9 +23,13 @@ struct ObjectiveSetSplitData {
     asr_utils::Variable<std::string> var;
     const bool Settings::*setting;
     const std::string final_objective_set;
+    const std::chrono::milliseconds split_delay;
 };
 // NOLINTNEXTLINE(readability-identifier-naming)
 std::vector<ObjectiveSetSplitData> SPLIT_OBJECTIVE_SET_DATA;
+
+using clk = std::chrono::steady_clock;
+clk::time_point deferred_split_time = clk::time_point::max();
 
 }  // namespace
 
@@ -35,38 +43,35 @@ const MatchableExecutableName MATCHABLE_EXECUTABLES[] = {
 
 void startup(void) {
     // Need to initialize this here to ensure the references to the mem watchers are valid
+    // NOLINTBEGIN(readability-magic-numbers)
     SPLIT_OBJECTIVE_SET_DATA = std::vector<ObjectiveSetSplitData>{
-        {
-            tyreen_cutscene_objective_set,
-            {DEBUG_VARIABLES ? "Tyreen Objective Set" : "", "None"},
-            &Settings::split_tyreen,
-            "Set_TyreenDeadCine_ObjectiveSet",
-        },
-        {
-            jackpot_cutscene_objective_set,
-            {DEBUG_VARIABLES ? "Jackpot Objective Set" : "", "None"},
-            &Settings::split_jackpot,
-            "Set_FinalCinematic_ObjectiveSet",
-        },
-        {
-            wedding_cutscene_objective_set,
-            {DEBUG_VARIABLES ? "Wedding Objective Set" : "", "None"},
-            &Settings::split_wedding,
-            "Set_FinalCredits_ObjectiveSet",
-        },
-        {
-            bounty_cutscene_objective_set,
-            {DEBUG_VARIABLES ? "Bounty Objective Set" : "", "None"},
-            &Settings::split_bounty,
-            "SET_EndCredits_ObjectiveSet",
-        },
-        {
-            krieg_cutscene_objective_set,
-            {DEBUG_VARIABLES ? "Krieg Objective Set" : "", "None"},
-            &Settings::split_krieg,
-            "SET_OutroCIN_ObjectiveSet",
-        },
+        {tyreen_cutscene_objective_set,
+         {DEBUG_VARIABLES ? "Tyreen Objective Set" : "", "None"},
+         &Settings::split_tyreen,
+         "Set_TyreenDeadCine_ObjectiveSet",
+         2s},
+        {jackpot_cutscene_objective_set,
+         {DEBUG_VARIABLES ? "Jackpot Objective Set" : "", "None"},
+         &Settings::split_jackpot,
+         "Set_FinalCinematic_ObjectiveSet",
+         1s},
+        {wedding_cutscene_objective_set,
+         {DEBUG_VARIABLES ? "Wedding Objective Set" : "", "None"},
+         &Settings::split_wedding,
+         "Set_FinalCredits_ObjectiveSet",
+         1s},
+        {bounty_cutscene_objective_set,
+         {DEBUG_VARIABLES ? "Bounty Objective Set" : "", "None"},
+         &Settings::split_bounty,
+         "SET_EndCredits_ObjectiveSet",
+         100ms},
+        {krieg_cutscene_objective_set,
+         {DEBUG_VARIABLES ? "Krieg Objective Set" : "", "None"},
+         &Settings::split_krieg,
+         "SET_OutroCIN_ObjectiveSet",
+         1s},
     };
+    // NOLINTEND(readability-magic-numbers)
 }
 
 bool on_launch(ProcessId game, const MatchableExecutableName* /*name*/) {
@@ -91,6 +96,12 @@ void on_exit(void) {
 }
 
 bool update(ProcessId /*game*/) {
+    if (deferred_split_time < clk::now()) {
+        timer_split();
+        runtime_print_message("Splitting as reached deferred split time.");
+        deferred_split_time = clk::time_point::max();
+    }
+
     gworld_name.update(game_info);
     loading.update(game_info);
 
@@ -115,7 +126,7 @@ bool update(ProcessId /*game*/) {
         watcher->update(game_info);
     }
 
-    for (auto& [watcher, var, _, __] : SPLIT_OBJECTIVE_SET_DATA) {
+    for (auto& [watcher, var, _, _2, _3] : SPLIT_OBJECTIVE_SET_DATA) {
         watcher.update(game_info);
         if (watcher.changed()) {
             var = read_from_gnames(watcher.current());
@@ -151,6 +162,7 @@ bool start(ProcessId /* game */) {
 void on_start(void) {
     in_game_world = "None";
     save_quits = 0;
+    deferred_split_time = clk::time_point::max();
 }
 
 bool is_loading(ProcessId /*game*/) {
@@ -175,10 +187,11 @@ bool split(ProcessId /*game*/) {
         return true;
     }
 
-    for (auto& [watcher, var, setting, expected] : SPLIT_OBJECTIVE_SET_DATA) {
-        if (settings.*setting && watcher.changed() && var == expected) {
-            runtime_print_message("Splitting due to hitting objective set {}", expected);
-            return true;
+    for (auto& [watcher, var, setting, expected, delay] : SPLIT_OBJECTIVE_SET_DATA) {
+        if (settings.*setting && watcher.changed() && watcher.old() != 0 && var == expected) {
+            runtime_print_message("Scheduling split due to hitting objective set {}", expected);
+            deferred_split_time = clk::now() + delay;
+            return false;
         }
     }
 
